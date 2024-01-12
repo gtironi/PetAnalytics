@@ -1,16 +1,12 @@
 #include "ICM_20948.h"
 
-#define USE_SPI
 #define SPI_PORT SPI
+#define CS_PIN 2
 
 ICM_20948_SPI myICM;
 
 void setup() {
-
   Serial.begin(115200);
-  while (!Serial){
-  };
-
   initializationICM(myICM);
 }
 
@@ -25,87 +21,180 @@ void initializationICM(ICM_20948_SPI &myICM){
     the sensor is successfully initialized before proceeding with the program execution.
   */
 
+  SPI_PORT.begin();
+
   bool initialized = false;
   while (!initialized){
+    myICM.begin(CS_PIN, SPI_PORT);
 
     Serial.print(F("Sensor initialization returned: "));
     Serial.println(myICM.statusString());
 
     if (myICM.status != ICM_20948_Stat_Ok){
-      Serial.println("Trying again...");
+      Serial.println(F("Trying again..."));
       delay(500);
 
     } else {
       initialized = true;
     }
   }
-  SPI_PORT.begin();
 }
 
-void getDataICM(ICM_20948_SPI &myICM) {
+bool getDataICM(ICM_20948_SPI &myICM) {
   /*
     Checks for available data from the ICM-20948 sensor. If data is ready,
     it calls the `getAGMT` function to retrieve accelerometer, gyroscope,
     magnetometer, and temperature measurements. Then, it prints these data
-    on the serial port using the `printData` function.
+    on the serial port using the `printScaledAGMT` function.
+    
+    Returns true if data is obtained successfully, otherwise returns false.
   */
 
   if (myICM.dataReady()) {
-
     myICM.getAGMT();
-    float* arrayOfData = getDataArray(myICM);
-    printData(arrayOfData);
-    delay(10);
+    printScaledAGMT(&myICM);
+    return true;
 
   } else {
-
-    Serial.println("Waiting for data...");
-    delay(500);
-
+    Serial.println(F("Waiting for data..."));
+    return false;
   }
 }
 
-float* getDataArray(ICM_20948_SPI &myICM) {
-  /*
-    This function takes an instance of the ICM_20948_SPI class and returns
-    a pointer to an array of floats with the 10 measurements made by the sensor 
-    in the following order: acc_x, acc_y, acc_z, gyr_x, gyr_y, gyr_z, mag_x, mag_y, 
-    mag_z, and temp.
-  */
-
-  static float arrayOfData[10];
-
-  arrayOfData[0] = myICM.accX();
-  arrayOfData[1] = myICM.accY();
-  arrayOfData[2] = myICM.accZ();
-  arrayOfData[3] = myICM.gyrX();
-  arrayOfData[4] = myICM.gyrY();
-  arrayOfData[5] = myICM.gyrZ();
-  arrayOfData[6] = myICM.magX();
-  arrayOfData[7] = myICM.magY();
-  arrayOfData[8] = myICM.magZ();
-  arrayOfData[9] = myICM.temp();
-
-  return arrayOfData;
-}
-
-void printData(float arrayOfData[10]) {
-  /*
-    This function, named printData, takes an array of 10 integers as input and prints 
-    the data along with corresponding labels to the Serial port. The labels include 
-    information about accelerometer (Acc_X, Acc_Y, Acc_Z), gyroscope (Gyr_X, Gyr_Y, Gyr_Z), 
-    magnetometer (Mag_X, Mag_Y, Mag_Z), and temperature (Temp). The function iterates 
-    through the array of data, printing each label followed by its corresponding data 
-    value. The data is sent to the Serial port for monitoring or debugging purposes.
-  */
-  const char arrayOfLabel[10][20] = {"Acc_X: ", " | Acc_Y: ", " | Acc_Z: ", " | Gyr_X: ", " | Gyr_Y: ", " | Gyr_Z: ", " | Mag_X: ", " | Mag_Y: ", " | Mag_Z: ", " | Temp: "};
-  
-  for (int i = 0; i < 10; i++) {
-    Serial.print(arrayOfLabel[i]);
-    if (i == 9) {
-      Serial.println(arrayOfData[i]);
-    } else {
-      Serial.print(arrayOfData[i]);
+void printPaddedInt16b(int16_t val)
+{
+  if (val > 0)
+  {
+    SERIAL_PORT.print(" ");
+    if (val < 10000)
+    {
+      SERIAL_PORT.print("0");
+    }
+    if (val < 1000)
+    {
+      SERIAL_PORT.print("0");
+    }
+    if (val < 100)
+    {
+      SERIAL_PORT.print("0");
+    }
+    if (val < 10)
+    {
+      SERIAL_PORT.print("0");
     }
   }
+  else
+  {
+    SERIAL_PORT.print("-");
+    if (abs(val) < 10000)
+    {
+      SERIAL_PORT.print("0");
+    }
+    if (abs(val) < 1000)
+    {
+      SERIAL_PORT.print("0");
+    }
+    if (abs(val) < 100)
+    {
+      SERIAL_PORT.print("0");
+    }
+    if (abs(val) < 10)
+    {
+      SERIAL_PORT.print("0");
+    }
+  }
+  SERIAL_PORT.print(abs(val));
+}
+
+void printRawAGMT(ICM_20948_AGMT_t agmt)
+{
+  SERIAL_PORT.print("RAW. Acc [ ");
+  printPaddedInt16b(agmt.acc.axes.x);
+  SERIAL_PORT.print(", ");
+  printPaddedInt16b(agmt.acc.axes.y);
+  SERIAL_PORT.print(", ");
+  printPaddedInt16b(agmt.acc.axes.z);
+  SERIAL_PORT.print(" ], Gyr [ ");
+  printPaddedInt16b(agmt.gyr.axes.x);
+  SERIAL_PORT.print(", ");
+  printPaddedInt16b(agmt.gyr.axes.y);
+  SERIAL_PORT.print(", ");
+  printPaddedInt16b(agmt.gyr.axes.z);
+  SERIAL_PORT.print(" ], Mag [ ");
+  printPaddedInt16b(agmt.mag.axes.x);
+  SERIAL_PORT.print(", ");
+  printPaddedInt16b(agmt.mag.axes.y);
+  SERIAL_PORT.print(", ");
+  printPaddedInt16b(agmt.mag.axes.z);
+  SERIAL_PORT.print(" ], Tmp [ ");
+  printPaddedInt16b(agmt.tmp.val);
+  SERIAL_PORT.print(" ]");
+  SERIAL_PORT.println();
+}
+
+void printFormattedFloat(float val, uint8_t leading, uint8_t decimals)
+{
+  float aval = abs(val);
+  if (val < 0)
+  {
+    SERIAL_PORT.print("-");
+  }
+  else
+  {
+    SERIAL_PORT.print(" ");
+  }
+  for (uint8_t indi = 0; indi < leading; indi++)
+  {
+    uint32_t tenpow = 0;
+    if (indi < (leading - 1))
+    {
+      tenpow = 1;
+    }
+    for (uint8_t c = 0; c < (leading - 1 - indi); c++)
+    {
+      tenpow *= 10;
+    }
+    if (aval < tenpow)
+    {
+      SERIAL_PORT.print("0");
+    }
+    else
+    {
+      break;
+    }
+  }
+  if (val < 0)
+  {
+    SERIAL_PORT.print(-val, decimals);
+  }
+  else
+  {
+    SERIAL_PORT.print(val, decimals);
+  }
+}
+
+void printScaledAGMT(ICM_20948_SPI *sensor) 
+{
+  SERIAL_PORT.print("Scaled. Acc (mg) [ ");
+  printFormattedFloat(sensor->accX(), 5, 2);
+  SERIAL_PORT.print(", ");
+  printFormattedFloat(sensor->accY(), 5, 2);
+  SERIAL_PORT.print(", ");
+  printFormattedFloat(sensor->accZ(), 5, 2);
+  SERIAL_PORT.print(" ], Gyr (DPS) [ ");
+  printFormattedFloat(sensor->gyrX(), 5, 2);
+  SERIAL_PORT.print(", ");
+  printFormattedFloat(sensor->gyrY(), 5, 2);
+  SERIAL_PORT.print(", ");
+  printFormattedFloat(sensor->gyrZ(), 5, 2);
+  SERIAL_PORT.print(" ], Mag (uT) [ ");
+  printFormattedFloat(sensor->magX(), 5, 2);
+  SERIAL_PORT.print(", ");
+  printFormattedFloat(sensor->magY(), 5, 2);
+  SERIAL_PORT.print(", ");
+  printFormattedFloat(sensor->magZ(), 5, 2);
+  SERIAL_PORT.print(" ], Tmp (C) [ ");
+  printFormattedFloat(sensor->temp(), 5, 2);
+  SERIAL_PORT.print(" ]");
+  SERIAL_PORT.println();
 }
