@@ -1,13 +1,25 @@
 #include "ICM_20948.h"
 
 #define SPI_PORT SPI
+#define SPI_FREQ 5000000
 #define CS_PIN 2
+
+#define accFFS gpm2 // [2, 4, 8 or 16]
+#define gyrFFS dps250 // [250, 500, 1000 or 2000]
+
+// Continuous or Cycled
+#define accSampleMode ICM_20948_Sample_Mode_Continuous 
+#define gyrSampleMode ICM_20948_Sample_Mode_Continuous
+
+#define accDLPF acc_d473bw_n499bw 
+#define gyrDLPF gyr_d361bw4_n376bw5 
 
 ICM_20948_SPI myICM;
 
 void setup() {
   Serial.begin(115200);
   initializationICM(myICM);
+  setICM(myICM);
 }
 
 void loop() {
@@ -25,7 +37,7 @@ void initializationICM(ICM_20948_SPI &myICM){
 
   bool initialized = false;
   while (!initialized){
-    myICM.begin(CS_PIN, SPI_PORT);
+    myICM.begin(CS_PIN, SPI_PORT, SPI_FREQ);
 
     Serial.print(F("Sensor initialization returned: "));
     Serial.println(myICM.statusString());
@@ -38,6 +50,42 @@ void initializationICM(ICM_20948_SPI &myICM){
       initialized = true;
     }
   }
+}
+
+void setICM(ICM_20948_SPI &myICM){
+  /*
+    This function performs essential setup tasks for the ICM-20948 sensor, 
+    including a software reset, deactivation of sleep and low-power modes, 
+    configuration of sample modes, setting full-scale ranges, configuring 
+    Digital Low-Pass Filters, and initializing the magnetometer. The specific 
+    configurations for sample modes, full-scale ranges, DLPF, and magnetometer 
+    are expected to be provided externally.
+  */
+
+  myICM.swReset();
+
+  // Deactivate sleep mode and low-power mode to prepare the sensor for operation
+  myICM.sleep(false);
+  myICM.lowPower(false);
+
+  // Sample Mode
+  myICM.setSampleMode(ICM_20948_Internal_Acc, accSampleMode);
+  myICM.setSampleMode(ICM_20948_Internal_Gyr, gyrSampleMode);
+
+  // Full Scale Settings
+  ICM_20948_fss_t myFSS;
+  myFSS.a = accFFS;
+  myFSS.g = gyrFFS;
+  myICM.setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS);
+
+  // Digital Low-Pass Filter
+  ICM_20948_dlpcfg_t myDLPcfg;
+  myDLPcfg.a = accDLPF;
+  myDLPcfg.g = gyrDLPF;
+  myICM.setDLPFcfg((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myDLPcfg);
+
+  // Magnetometer
+  myICM.startupMagnetometer();
 }
 
 bool getDataICM(ICM_20948_SPI &myICM) {
