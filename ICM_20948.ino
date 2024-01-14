@@ -11,8 +11,14 @@
 #define accSampleMode ICM_20948_Sample_Mode_Continuous 
 #define gyrSampleMode ICM_20948_Sample_Mode_Continuous
 
+// ODR = Base Sample Rate/1+SMPLRT_DIV -> SMPLRT_DIV = 10, ODR = 100 hz e Base Sample Rate = 1100 hz** para o acelerômetro é 1100 hz e para o giroscópio é 1125hz 
+#define accSampleRate 10
+#define gyrSampleRate 10
+
+/*
 #define accDLPF acc_d473bw_n499bw 
 #define gyrDLPF gyr_d361bw4_n376bw5 
+*/
 
 ICM_20948_SPI myICM;
 
@@ -28,12 +34,14 @@ void loop() {
 
 void initializationICM(ICM_20948_SPI &myICM){
   /*
-    Initializes the ICM-20948 sensor, checks the initialization status,
-    and prints relevant information on the serial port. It waits until
-    the sensor is successfully initialized before proceeding with the program execution.
+  Initializes the ICM-20948 sensor, checks the initialization status,
+  and prints relevant information on the serial port. It waits until
+  the sensor is successfully initialized before proceeding with the program execution.
   */
 
   SPI_PORT.begin();
+
+  myICM.enableDebugging();
 
   bool initialized = false;
   while (!initialized){
@@ -54,15 +62,16 @@ void initializationICM(ICM_20948_SPI &myICM){
 
 void setICM(ICM_20948_SPI &myICM){
   /*
-    This function performs essential setup tasks for the ICM-20948 sensor, 
-    including a software reset, deactivation of sleep and low-power modes, 
-    configuration of sample modes, setting full-scale ranges, configuring 
-    Digital Low-Pass Filters, and initializing the magnetometer. The specific 
-    configurations for sample modes, full-scale ranges, DLPF, and magnetometer 
-    are expected to be provided externally.
+  This function performs essential setup tasks for the ICM-20948 sensor, 
+  including a software reset, deactivation of sleep and low-power modes, 
+  configuration of sample modes, setting full-scale ranges, configuring 
+  Digital Low-Pass Filters, and initializing the magnetometer. The specific 
+  configurations for sample modes, full-scale ranges, DLPF, and magnetometer 
+  are expected to be provided externally.
   */
 
   myICM.swReset();
+  checkingStatus(myICM, "Software Reset");
 
   // Deactivate sleep mode and low-power mode to prepare the sensor for operation
   myICM.sleep(false);
@@ -71,31 +80,58 @@ void setICM(ICM_20948_SPI &myICM){
   // Sample Mode
   myICM.setSampleMode(ICM_20948_Internal_Acc, accSampleMode);
   myICM.setSampleMode(ICM_20948_Internal_Gyr, gyrSampleMode);
+  checkingStatus(myICM, "setSampleMode");
+
+  // Sample Rate (vai ser usada pois não abilitamos DMP e o FIFO)
+  ICM_20948_smplrt_t smplrt;
+  smplrt.a = accSampleRate;
+  smplrt.g = gyrSampleRate;
+  myICM.setSampleRate((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), smplrt);
+  checkingStatus(myICM, "setSampleRate");
 
   // Full Scale Settings
   ICM_20948_fss_t myFSS;
   myFSS.a = accFFS;
   myFSS.g = gyrFFS;
   myICM.setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS);
+  checkingStatus(myICM, "setFullScale");
 
   // Digital Low-Pass Filter
+  /*
   ICM_20948_dlpcfg_t myDLPcfg;
   myDLPcfg.a = accDLPF;
   myDLPcfg.g = gyrDLPF;
   myICM.setDLPFcfg((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myDLPcfg);
+  */
 
   // Magnetometer
   myICM.startupMagnetometer();
+  checkingStatus(myICM, "startupMagnetometer");
+}
+
+void checkingStatus(ICM_20948_SPI &myICM, char functionName){
+  /*
+  This function checks the status of an operation performed by a function in the ICM-20948 library.
+  If the operation indicates an error, it prints a debug message containing the function name and 
+  the corresponding status message.
+  */
+
+  if (myICM.status != ICM_20948_Stat_Ok)
+  {
+    SERIAL_PORT.print(F(functionName));
+    SERIAL_PORT.print(F(" returned: "));
+    SERIAL_PORT.println(myICM.statusString());
+  }
 }
 
 bool getDataICM(ICM_20948_SPI &myICM) {
   /*
-    Checks for available data from the ICM-20948 sensor. If data is ready,
-    it calls the `getAGMT` function to retrieve accelerometer, gyroscope,
-    magnetometer, and temperature measurements. Then, it prints these data
-    on the serial port using the `printScaledAGMT` function.
+  Checks for available data from the ICM-20948 sensor. If data is ready,
+  it calls the `getAGMT` function to retrieve accelerometer, gyroscope,
+  magnetometer, and temperature measurements. Then, it prints these data
+  on the serial port using the `printScaledAGMT` function.
     
-    Returns true if data is obtained successfully, otherwise returns false.
+  Returns true if data is obtained successfully, otherwise returns false.
   */
 
   if (myICM.dataReady()) {
