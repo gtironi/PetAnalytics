@@ -16,6 +16,8 @@ private:
   ICM_20948_SPI imu;
   void printRawAGMT(ICM_20948_AGMT_t agmt);
   void printPaddedInt16b(int16_t val);
+  void set(uint8_t csPin);
+  void checkstatus(char functionName);
 };
 
 #endif
