@@ -1,6 +1,5 @@
 #include "ICM_20948.h"
 
-#define SPI_PORT SPI
 #define SPI_FREQ 5000000
 #define CS_PIN 2
 
@@ -39,13 +38,13 @@ void initializationICM(ICM_20948_SPI &myICM){
   the sensor is successfully initialized before proceeding with the program execution.
   */
 
-  SPI_PORT.begin();
+  SPI.begin();
 
   myICM.enableDebugging();
 
   bool initialized = false;
   while (!initialized){
-    myICM.begin(CS_PIN, SPI_PORT, SPI_FREQ);
+    myICM.begin(CS_PIN, SPI, SPI_FREQ);
 
     Serial.print(F("Sensor initialization returned: "));
     Serial.println(myICM.statusString());
@@ -82,7 +81,7 @@ void setICM(ICM_20948_SPI &myICM){
   myICM.setSampleMode(ICM_20948_Internal_Gyr, gyrSampleMode);
   checkingStatus(myICM, "setSampleMode");
 
-  // Sample Rate (vai ser usada pois não abilitamos DMP e o FIFO)
+  // Sample Rate (vai ser usada pois não habilitamos DMP e o FIFO)
   ICM_20948_smplrt_t smplrt;
   smplrt.a = accSampleRate;
   smplrt.g = gyrSampleRate;
@@ -118,9 +117,9 @@ void checkingStatus(ICM_20948_SPI &myICM, char functionName){
 
   if (myICM.status != ICM_20948_Stat_Ok)
   {
-    SERIAL_PORT.print(F(functionName));
-    SERIAL_PORT.print(F(" returned: "));
-    SERIAL_PORT.println(myICM.statusString());
+    Serial.print(F(functionName));
+    Serial.print(F(" returned: "));
+    Serial.println(myICM.statusString());
   }
 }
 
@@ -149,71 +148,71 @@ void printPaddedInt16b(int16_t val)
 {
   if (val > 0)
   {
-    SERIAL_PORT.print(" ");
+    Serial.print(" ");
     if (val < 10000)
     {
-      SERIAL_PORT.print("0");
+      Serial.print("0");
     }
     if (val < 1000)
     {
-      SERIAL_PORT.print("0");
+      Serial.print("0");
     }
     if (val < 100)
     {
-      SERIAL_PORT.print("0");
+      Serial.print("0");
     }
     if (val < 10)
     {
-      SERIAL_PORT.print("0");
+      Serial.print("0");
     }
   }
   else
   {
-    SERIAL_PORT.print("-");
+    Serial.print("-");
     if (abs(val) < 10000)
     {
-      SERIAL_PORT.print("0");
+      Serial.print("0");
     }
     if (abs(val) < 1000)
     {
-      SERIAL_PORT.print("0");
+      Serial.print("0");
     }
     if (abs(val) < 100)
     {
-      SERIAL_PORT.print("0");
+      Serial.print("0");
     }
     if (abs(val) < 10)
     {
-      SERIAL_PORT.print("0");
+      Serial.print("0");
     }
   }
-  SERIAL_PORT.print(abs(val));
+  Serial.print(abs(val));
 }
 
 void printRawAGMT(ICM_20948_AGMT_t agmt)
 {
-  SERIAL_PORT.print("RAW. Acc [ ");
+  Serial.print("RAW. Acc [ ");
   printPaddedInt16b(agmt.acc.axes.x);
-  SERIAL_PORT.print(", ");
+  Serial.print(", ");
   printPaddedInt16b(agmt.acc.axes.y);
-  SERIAL_PORT.print(", ");
+  Serial.print(", ");
   printPaddedInt16b(agmt.acc.axes.z);
-  SERIAL_PORT.print(" ], Gyr [ ");
+  Serial.print(" ], Gyr [ ");
   printPaddedInt16b(agmt.gyr.axes.x);
-  SERIAL_PORT.print(", ");
+  Serial.print(", ");
   printPaddedInt16b(agmt.gyr.axes.y);
-  SERIAL_PORT.print(", ");
+  Serial.print(", ");
   printPaddedInt16b(agmt.gyr.axes.z);
-  SERIAL_PORT.print(" ], Mag [ ");
+  Serial.print(" ], Mag [ ");
   printPaddedInt16b(agmt.mag.axes.x);
-  SERIAL_PORT.print(", ");
+  Serial.print(", ");
   printPaddedInt16b(agmt.mag.axes.y);
-  SERIAL_PORT.print(", ");
+  Serial.print(", ");
   printPaddedInt16b(agmt.mag.axes.z);
-  SERIAL_PORT.print(" ], Tmp [ ");
+  Serial.print(" ], Tmp [ ");
   printPaddedInt16b(agmt.tmp.val);
-  SERIAL_PORT.print(" ]");
-  SERIAL_PORT.println();
+  Serial.print(" ]");
+  Serial.println();
 }
 
 void printFormattedFloat(float val, uint8_t leading, uint8_t decimals)
@@ -221,11 +220,11 @@ void printFormattedFloat(float val, uint8_t leading, uint8_t decimals)
   float aval = abs(val);
   if (val < 0)
   {
-    SERIAL_PORT.print("-");
+    Serial.print("-");
   }
   else
   {
-    SERIAL_PORT.print(" ");
+    Serial.print(" ");
   }
   for (uint8_t indi = 0; indi < leading; indi++)
   {
@@ -240,7 +239,7 @@ void printFormattedFloat(float val, uint8_t leading, uint8_t decimals)
     }
     if (aval < tenpow)
     {
-      SERIAL_PORT.print("0");
+      Serial.print("0");
     }
     else
     {
@@ -249,36 +248,36 @@ void printFormattedFloat(float val, uint8_t leading, uint8_t decimals)
   }
   if (val < 0)
   {
-    SERIAL_PORT.print(-val, decimals);
+    Serial.print(-val, decimals);
   }
   else
   {
-    SERIAL_PORT.print(val, decimals);
+    Serial.print(val, decimals);
   }
 }
 
 void printScaledAGMT(ICM_20948_SPI *sensor) 
 {
-  SERIAL_PORT.print("Scaled. Acc (mg) [ ");
+  Serial.print("Scaled. Acc (mg) [ ");
   printFormattedFloat(sensor->accX(), 5, 2);
-  SERIAL_PORT.print(", ");
+  Serial.print(", ");
   printFormattedFloat(sensor->accY(), 5, 2);
-  SERIAL_PORT.print(", ");
+  Serial.print(", ");
   printFormattedFloat(sensor->accZ(), 5, 2);
-  SERIAL_PORT.print(" ], Gyr (DPS) [ ");
+  Serial.print(" ], Gyr (DPS) [ ");
   printFormattedFloat(sensor->gyrX(), 5, 2);
-  SERIAL_PORT.print(", ");
+  Serial.print(", ");
   printFormattedFloat(sensor->gyrY(), 5, 2);
-  SERIAL_PORT.print(", ");
+  Serial.print(", ");
   printFormattedFloat(sensor->gyrZ(), 5, 2);
-  SERIAL_PORT.print(" ], Mag (uT) [ ");
+  Serial.print(" ], Mag (uT) [ ");
   printFormattedFloat(sensor->magX(), 5, 2);
-  SERIAL_PORT.print(", ");
+  Serial.print(", ");
   printFormattedFloat(sensor->magY(), 5, 2);
-  SERIAL_PORT.print(", ");
+  Serial.print(", ");
   printFormattedFloat(sensor->magZ(), 5, 2);
-  SERIAL_PORT.print(" ], Tmp (C) [ ");
+  Serial.print(" ], Tmp (C) [ ");
   printFormattedFloat(sensor->temp(), 5, 2);
-  SERIAL_PORT.print(" ]");
-  SERIAL_PORT.println();
+  Serial.print(" ]");
+  Serial.println();
 }
