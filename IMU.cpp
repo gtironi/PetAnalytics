@@ -117,7 +117,7 @@ void IMUClass::set(uint8_t csPin){
   */
 
   imu.swReset();
-  checkingStatus("Software Reset");
+  checkstatus("Software Reset");
 
   // Deactivate sleep mode and low-power mode to prepare the sensor for operation
   imu.sleep(false);
@@ -126,25 +126,25 @@ void IMUClass::set(uint8_t csPin){
   // Sample Mode
   imu.setSampleMode(ICM_20948_Internal_Acc, accSampleMode);
   imu.setSampleMode(ICM_20948_Internal_Gyr, gyrSampleMode);
-  checkingStatus("setSampleMode");
+  checkstatus("setSampleMode");
 
   // Sample Rate (vai ser usada pois não habilitamos DMP e o FIFO)
   ICM_20948_smplrt_t smplrt;
   smplrt.a = accSampleRate;
   smplrt.g = gyrSampleRate;
   imu.setSampleRate((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), smplrt);
-  checkingStatus("setSampleRate");
+  checkstatus("setSampleRate");
 
   // Full Scale Settings
   ICM_20948_fss_t myFSS;
   myFSS.a = accFFS;
   myFSS.g = gyrFFS;
   imu.setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS);
-  checkingStatus("setFullScale");
+  checkstatus("setFullScale");
 
   // Magnetometer
   imu.startupMagnetometer();
-  checkingStatus("startupMagnetometer");
+  checkstatus("startupMagnetometer");
 }
 
 void IMUClass::checkstatus(char functionName){
@@ -156,8 +156,8 @@ void IMUClass::checkstatus(char functionName){
 
   if (imu.status != ICM_20948_Stat_Ok)
   {
-    Serial.print(F(functionName));
-    Serial.print(F(" returned: "));
+    Serial.print(functionName);
+    Serial.print(" returned: ");
     Serial.println(imu.statusString());
   }
 }
