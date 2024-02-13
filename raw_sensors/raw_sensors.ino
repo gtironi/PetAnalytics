@@ -55,17 +55,18 @@ void setup(){
     // vai inicializar o DMP e retornar o status/resultado
     success &= (myICM.initializeDMP() == ICM_20948_Stat_Ok);
 
-    // ativação acelerômetro
+    // ativação
     success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok);
     success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok);
     success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok);
     
-    // ajustando a taxa do DMP
+    // ajustando a taxa do DMP      
     success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Accel, 1) == ICM_20948_Stat_Ok);        
     success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Gyro, 1) == ICM_20948_Stat_Ok);         
     success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Gyro_Calibr, 1) == ICM_20948_Stat_Ok);  
     success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Cpass, 1) == ICM_20948_Stat_Ok);        
-    success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Cpass_Calibr, 1) == ICM_20948_Stat_Ok); 
+    success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Cpass_Calibr, 1) == ICM_20948_Stat_Ok);       
+
 
     // habilitando o FIFO 
     success &= (myICM.enableFIFO() == ICM_20948_Stat_Ok);
@@ -85,6 +86,9 @@ void setup(){
         SERIAL_PORT.println(F("Enable DMP failed!"));
         while (1);
     }
+
+    std::chrono::steady_clock::time_point lastInsertTime;
+    std::chrono::steady_clock::time_point currentTime;
 }
 
 void loop(){
@@ -97,7 +101,7 @@ void loop(){
     // verifica se existem dados válidos disponíveis
     if ((myICM.status == ICM_20948_Stat_Ok) || (myICM.status == ICM_20948_Stat_FIFOMoreDataAvail)){
 
-        if ((data.header & DMP_header_bitmap_Accel) > 0) // Check for Accel
+    if ((data.header & DMP_header_bitmap_Accel) > 0) // Check for Accel
     {
       float acc_x = (float)data.Raw_Accel.Data.X; // Extract the raw accelerometer data
       float acc_y = (float)data.Raw_Accel.Data.Y;
