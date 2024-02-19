@@ -67,9 +67,9 @@ void setup(){
     // ajustando a taxa do DMP ---  Value = (DMP running rate / ODR ) - 1 --- Value = (225/100) - 1 = 1.25 ou 1
     // essa é uma aproximação, tendo 1 como valor, a taxa vai ser de 112.5 hz
     // nas linhas seguintes, estão sendo configurados os três sensores que ativamos acima
-    success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Accel, 0) == ICM_20948_Stat_Ok); 
-    success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Gyro, 0) == ICM_20948_Stat_Ok); 
-    success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Cpass, 0) == ICM_20948_Stat_Ok);
+    success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Accel, 1) == ICM_20948_Stat_Ok); 
+    success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Gyro, 1) == ICM_20948_Stat_Ok); 
+    success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Cpass, 1) == ICM_20948_Stat_Ok);
 
     // habilitando o FIFO 
     success &= (myICM.enableFIFO() == ICM_20948_Stat_Ok);
@@ -120,13 +120,6 @@ void loop(){
             float x = (float)data.Raw_Gyro.Data.X;
             float y = (float)data.Raw_Gyro.Data.Y;
             float z = (float)data.Raw_Gyro.Data.Z;
-                //
-            SERIAL_PORT.print(F("Gyro: X:"));
-            SERIAL_PORT.print(x);
-            SERIAL_PORT.print(F(" Y:"));
-            SERIAL_PORT.print(y);
-            SERIAL_PORT.print(F(" Z:"));
-            SERIAL_PORT.println(z);
         }
 
         // processamento e impressão dos dados do magnetômetro
@@ -134,13 +127,6 @@ void loop(){
             float x = (float)data.Compass.Data.X;
             float y = (float)data.Compass.Data.Y;
             float z = (float)data.Compass.Data.Z;
-                //
-            SERIAL_PORT.print(F("Compass: X:"));
-            SERIAL_PORT.print(x);
-            SERIAL_PORT.print(F(" Y:"));
-            SERIAL_PORT.print(y);
-            SERIAL_PORT.print(F(" Z:"));
-            SERIAL_PORT.println(z);
         }
     }
 
@@ -217,8 +203,8 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void){
 
     // estamos configuração as taxas de amostragem padrões do acelerômetro e do giroscópio para 112 hz ao mudar o parâmetro para 8, e não 4 como tá no exemplo 
     ICM_20948_smplrt_t mySmplrt;
-    mySmplrt.g = 8;
-    mySmplrt.a = 8;
+    mySmplrt.g = 4;
+    mySmplrt.a = 4;
     result = setSampleRate((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt); if (result > worstResult) worstResult = result;
     
     // configurando o endereço inicial do DMP
