@@ -197,24 +197,19 @@ void loop()
   //    readDMPdataFromFIFO will return ICM_20948_Stat_FIFOIncompleteData if a frame was present but was incomplete
   //    readDMPdataFromFIFO will return ICM_20948_Stat_Ok if a valid frame was read.
   //    readDMPdataFromFIFO will return ICM_20948_Stat_FIFOMoreDataAvail if a valid frame was read _and_ the FIFO contains more (unread) data.
-  icm_20948_DMP_data_t data;
-  myICM_1.readDMPdataFromFIFO(&data);
+  icm_20948_DMP_data_t data_1;
+  myICM_1.readDMPdataFromFIFO(&data_1);
 
   if ((myICM_1.status == ICM_20948_Stat_Ok) || (myICM_1.status == ICM_20948_Stat_FIFOMoreDataAvail)) // Was valid data available?
   {
-    //SERIAL_PORT.print(F("Received data! Header: 0x")); // Print the header in HEX so we can see what data is arriving in the FIFO
-    //if ( data.header < 0x1000) SERIAL_PORT.print( "0" ); // Pad the zeros
-    //if ( data.header < 0x100) SERIAL_PORT.print( "0" );
-    //if ( data.header < 0x10) SERIAL_PORT.print( "0" );
-    //SERIAL_PORT.println( data.header, HEX );
 
-    if ((data.header & DMP_header_bitmap_Accel) > 0) // Check for Accel
+    if ((data_1.header & DMP_header_bitmap_Accel) > 0) // Check for Accel
     {
-      float acc_x = (float)data.Raw_Accel.Data.X; // Extract the raw accelerometer data
-      float acc_y = (float)data.Raw_Accel.Data.Y;
-      float acc_z = (float)data.Raw_Accel.Data.Z;
+      float acc_x = (float)data_1.Raw_Accel.Data.X; // Extract the raw accelerometer data
+      float acc_y = (float)data_1.Raw_Accel.Data.Y;
+      float acc_z = (float)data_1.Raw_Accel.Data.Z;
 
-      SERIAL_PORT.print(F("Accel: X:"));
+      SERIAL_PORT.print(F("Accel 1: X:"));
       SERIAL_PORT.print(acc_x);
       SERIAL_PORT.print(F(" Y:"));
       SERIAL_PORT.print(acc_y);
@@ -222,19 +217,19 @@ void loop()
       SERIAL_PORT.println(acc_z);
     }}
 
-    icm_20948_DMP_data_t data;
-  myICM_2.readDMPdataFromFIFO(&data);
+  icm_20948_DMP_data_t data_2;
+  myICM_2.readDMPdataFromFIFO(&data_2);
 
   if ((myICM_2.status == ICM_20948_Stat_Ok) || (myICM_2.status == ICM_20948_Stat_FIFOMoreDataAvail)) // Was valid data available?
   {
 
-    if ((data.header & DMP_header_bitmap_Accel) > 0) // Check for Accel
+    if ((data_2.header & DMP_header_bitmap_Accel) > 0) // Check for Accel
     {
-      float acc_x_2 = (float)data.Raw_Accel.Data.X; // Extract the raw accelerometer data
-      float acc_y_2 = (float)data.Raw_Accel.Data.Y;
-      float acc_z_2 = (float)data.Raw_Accel.Data.Z;
+      float acc_x_2 = (float)data_2.Raw_Accel.Data.X; // Extract the raw accelerometer data
+      float acc_y_2 = (float)data_2.Raw_Accel.Data.Y;
+      float acc_z_2 = (float)data_2.Raw_Accel.Data.Z;
 
-      SERIAL_PORT.print(F("Accel: X:"));
+      SERIAL_PORT.print(F("Accel 2: X:"));
       SERIAL_PORT.print(acc_x_2);
       SERIAL_PORT.print(F(" Y:"));
       SERIAL_PORT.print(acc_y_2);
@@ -242,7 +237,7 @@ void loop()
       SERIAL_PORT.println(acc_z_2);
     }}
 
-    icm_20948_DMP_data_t data;
+  icm_20948_DMP_data_t data;
   myICM_3.readDMPdataFromFIFO(&data);
 
   if ((myICM_3.status == ICM_20948_Stat_Ok) || (myICM_3.status == ICM_20948_Stat_FIFOMoreDataAvail)) // Was valid data available?
@@ -254,7 +249,7 @@ void loop()
       float acc_y_3 = (float)data.Raw_Accel.Data.Y;
       float acc_z_3 = (float)data.Raw_Accel.Data.Z;
 
-      SERIAL_PORT.print(F("Accel: X:"));
+      SERIAL_PORT.print(F("Accel 3: X:"));
       SERIAL_PORT.print(acc_x_3);
       SERIAL_PORT.print(F(" Y:"));
       SERIAL_PORT.print(acc_y_3);
