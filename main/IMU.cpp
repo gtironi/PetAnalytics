@@ -3,13 +3,22 @@
 #include <Arduino.h>
 #include <SPI.h>
 
+volatile bool isrFired = false;
+
+// vai ser uma função auxiliar que altera o estado da variável isrFired
+void icmISR()
+{
+  isrFired = true; 
+}
+
 IMU_20948::IMU_20948(int pinIMU, const char* nameIMU)
 {
   IMUPin = pinIMU;
   IMUName = nameIMU;
 
-  // inicializando o SPI
-  SPI.begin();
+  // vai configurar a interrupção no pino em que está o IMU (assim como no exemplo 3)
+  pinMode(IMUPin, INPUT_PULLUP);                                   
+  attachInterrupt(digitalPinToInterrupt(IMUPin), icmISR, FALLING); 
 
   // construindo o loop de inicialização do IMU
   bool initialized = false;
@@ -32,7 +41,7 @@ IMU_20948::IMU_20948(int pinIMU, const char* nameIMU)
     }
     else
     {
-      Serial.println(F("Device connected!"));
+      Serial.println("Device connected!");
       initialized = true;
     }
 
@@ -62,13 +71,19 @@ IMU_20948::IMU_20948(int pinIMU, const char* nameIMU)
     // Verifica o sucesso das configurações acima
     if (success)
     {
-      Serial.println(F("DMP enabled!"));}
+      Serial.println("DMP enabled!");}
     else
     {
-      Serial.println(F("Enable DMP failed!"));
-      Serial.println(F("Please check that you have uncommented line 29 (#define ICM_20948_USE_DMP) in ICM_20948_C.h..."));
+      Serial.println("Enable DMP failed!");
+      Serial.println("Please check that you have uncommented line 29 (#define ICM_20948_USE_DMP) in ICM_20948_C.h...");
       while (1);
     }
+
+    myICM.cfgIntActiveLow(true);  // Active low to be compatible with the breakout board's pullup resistor
+    myICM.cfgIntOpenDrain(false); // Push-pull, though open-drain would also work thanks to the pull-up resistors on the breakout
+    myICM.cfgIntLatch(true);      // Latch the interrupt until cleared
+    myICM.intEnableRawDataReady(true); // enable interrupts on raw data ready
+
   }
 }
 
@@ -86,15 +101,10 @@ void IMU_20948::activate_sensors(bool *success)
   *success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok);
 }
 
-float IMU_20948::getFrequency()
-{
-  return 0;
-}
-
 void IMU_20948::readData()
 {
-  // GAMBIARRA (myICM.status != ICM_20948_Stat_Ok) || (myICM.status == ICM_20948_Stat_FIFOMoreDataAvail)
-  if(1)
+  // se a interrupção for ativada, poderemos coletar os dados
+  if(isrFired)
   {
     icm_20948_DMP_data_t data;
     myICM.readDMPdataFromFIFO(&data);
@@ -139,11 +149,15 @@ void IMU_20948::readData()
     Serial.print(comp_y);
     Serial.print(" Z:");
     Serial.println(comp_z);
+
+    isrFired = false;
   }
   else
   {
     Serial.println("DEU RUIM AO COLETAR OS DADOS...");
   }
+
+  myICM.clearInterrupts();
 }
 
 ICM_20948_Status_e ICM_20948::initializeDMP(void)
